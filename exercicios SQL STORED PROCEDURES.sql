@@ -115,7 +115,7 @@ BEGIN
 	ELSE
 	BEGIN
 		PRINT '--------------------------------------------------'
-		PRINT 'PLACA N√O LOCALIZADA'
+		PRINT 'PLACA N√ÉO LOCALIZADA'
 		PRINT '--------------------------------------------------'
 	END
 END
@@ -191,7 +191,7 @@ BEGIN
 	END 
 	ELSE
 	BEGIN
-		PRINT 'CARRO N√O ENCONTRADO'
+		PRINT 'CARRO N√ÉO ENCONTRADO'
 	END
 END
 go 
@@ -208,36 +208,17 @@ EXEC adiciona_Sinistro  202255509, MZT1122, URUSSANGA, RAFAEL
 
 create proc clientes_sinistro (@n int) as
 begin
-	WITH ranking AS (
-        SELECT c.nome, COUNT(s.placa) AS qt_sinistros,
-        ROW_NUMBER() OVER (ORDER BY COUNT(s.placa) DESC) AS posicao_ranking
+	SELECT top (@n) c.nome, ROW_NUMBER() OVER (ORDER BY COUNT(s.placa) DESC) AS posicao_ranking,
+		COUNT(s.placa) AS qt_sinistros
         FROM sinistro s
-        JOIN carro ca ON s.placa = ca.placa
-        JOIN apolice a ON ca.placa = a.placa
-		JOIN CLIENTE c ON a.cod_cliente = c.cod_cliente
+        INNER JOIN carro ca ON s.placa = ca.placa
+        INNER JOIN apolice a ON ca.placa = a.placa
+		INNER JOIN CLIENTE c ON a.cod_cliente = c.cod_cliente
         GROUP BY c.nome
-    )
-    SELECT nome, posicao_ranking AS ranking, qt_sinistros
-    FROM ranking
-    WHERE posicao_ranking <= @n
-    ORDER BY posicao_ranking ASC
 end
 go
 
-exec clientes_sinistro 5
+exec clientes_sinistro 3
 
---Explicando a soluÁ„o:
-
---A primeira parte da stored procedure usa uma query com a cl·usula WITH para criar uma tabela tempor·ria chamada ranking. 
---Essa tabela tempor·ria contÈm o nome do cliente, a quantidade de sinistros desse cliente e a posiÁ„o do cliente no 
---ranking de quantidade de sinistros(atribuÌdo atravÈs da funÁ„o ROW_NUMBER).
-
---A segunda parte da stored procedure usa uma query que seleciona os N primeiros clientes com mais sinistros (dado pelo par‚metro @n),
---utilizando a tabela tempor·ria ranking. A tabela resultante possui as colunas nome, posicao_ranking (posiÁ„o no ranking)e qt_sinistros (quantidade de sinistros).
-
---A cl·usula ORDER BY ordena os resultados pelo ranking em ordem crescente,
---para que o cliente com o maior n˙mero de sinistros seja exibido primeiro.
-
---Por fim, a stored procedure È finalizada com a palavra-chave END.
 
 
